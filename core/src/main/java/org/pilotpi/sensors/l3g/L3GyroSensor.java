@@ -1,11 +1,8 @@
-// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
-// Jad home page: http://www.kpdus.com/jad.html
-// Decompiler options: packimports(3) 
-// Source File Name:   L3GyroSensor.java
-
 package org.pilotpi.sensors.l3g;
 
 import java.io.IOException;
+
+import org.pilotpi.math.Vector;
 
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
@@ -13,27 +10,6 @@ import com.pi4j.io.i2c.I2CFactory;
 
 public class L3GyroSensor
 {
-    public static class Vector
-    {
-
-        int x;
-        int y;
-        int z;
-
-        public Vector()
-        {
-            x = y = z = 0;
-        }
-
-        public Vector(float a, float b, float c)
-        {
-            x = (int)a;
-            y = (int)b;
-            z = (int)c;
-        }
-    }
-
-
     public L3GyroSensor()
     {
         vector = new Vector();
@@ -43,35 +19,34 @@ public class L3GyroSensor
         throws IOException
     {
         bus = I2CFactory.getInstance(1);
-        device = bus.getDevice(107);
-        device.write(32, (byte)15);
+        device = bus.getDevice(Constants.L3GD20_ADDRESS_SA0_HIGH);
+        device.write(Constants.L3G_CTRL_REG1, (byte)0x0F); // normal power mode, all axes enabled, 100 Hz
+        device.write(Constants.L3G_CTRL_REG4, (byte)0x20); // 2000 dps full scale
     }
 
     public void update()
         throws IOException
     {
-        byte xlg = (byte)device.read(40);
-        byte xhg = (byte)device.read(41);
-        byte ylg = (byte)device.read(42);
-        byte yhg = (byte)device.read(43);
-        byte zlg = (byte)device.read(44);
-        byte zhg = (byte)device.read(45);
-        vector.x = xhg << 8 | xlg;
-        vector.y = yhg << 8 | ylg;
-        vector.z = zhg << 8 | zlg;
+        byte xlg = (byte)device.read(Constants.L3G_OUT_X_L);
+        byte xhg = (byte)device.read(Constants.L3G_OUT_X_H);
+        byte ylg = (byte)device.read(Constants.L3G_OUT_Y_L);
+        byte yhg = (byte)device.read(Constants.L3G_OUT_Y_H);
+        byte zlg = (byte)device.read(Constants.L3G_OUT_Z_L);
+        byte zhg = (byte)device.read(Constants.L3G_OUT_Z_H);
+        vector.setX(xhg << 8 | xlg);
+        vector.setY(yhg << 8 | ylg);
+        vector.setZ(zhg << 8 | zlg);
     }
 
-    public static void normalize(Vector v)
-    {
-        float f = (float)(Math.pow(v.x, 2D) + Math.pow(v.z, 2D) + Math.pow(v.z, 2D));
+    public static void normalize(Vector v) {
+        float f = (float)(Math.pow(v.getX(), 2D) + Math.pow(v.getY(), 2D) + Math.pow(v.getZ(), 2D));
         float mag = (float)Math.sqrt(f);
         System.out.println(String.format("%.4f\t%.4f\t%.4f", new Object[] {
-            Float.valueOf((float)v.x / mag), Float.valueOf((float)v.y / mag), Float.valueOf((float)v.z / mag)
+            Float.valueOf((float)v.getX() / mag), Float.valueOf((float)v.getY() / mag), Float.valueOf((float)v.getZ() / mag)
         }));
     }
 
-    public static void main(String args[])
-        throws IOException, InterruptedException
+    public static void main(String args[]) throws IOException, InterruptedException
     {
         L3GyroSensor gyro = new L3GyroSensor();
         gyro.init();

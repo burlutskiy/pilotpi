@@ -30,7 +30,7 @@ public class LPSensor
     public void update()
         throws IOException
     {
-        for(; (device.read(39) & 2) >> 1 != 1; Thread.yield());
+        for(; (device.read(39) & 2) >> 1 != 1; Thread.yield()){};
         int pxl = device.read(40);
         int pl = device.read(41);
         int ph = device.read(42);

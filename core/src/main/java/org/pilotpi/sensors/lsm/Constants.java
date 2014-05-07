@@ -8,7 +8,16 @@ package org.pilotpi.sensors.lsm;
 
 public interface Constants
 {
-
+//	public static final byte  D_SA0_HIGH_ADDRESS              =0b0011101; // D with SA0 high
+//	public static final byte  D_SA0_LOW_ADDRESS               =0b0011110; // D with SA0 low or non-D magnetometer
+//	public static final byte  NON_D_MAG_ADDRESS               =0b0011110; // D with SA0 low or non-D magnetometer
+//	public static final byte  NON_D_ACC_SA0_LOW_ADDRESS       =0b0011000; // non-D accelerometer with SA0 low
+//	public static final byte  NON_D_ACC_SA0_HIGH_ADDRESS      =0b0011001; // non-D accelerometer with SA0 high
+//
+//	public static final byte  TEST_REG_NACK -1
+//	public static final byte  D_WHO_ID    0x49
+//	public static final byte  DLM_WHO_ID  0x3C
+	
     public static final byte TEMP_OUT_L = 5;
     public static final byte TEMP_OUT_H = 6;
     public static final byte STATUS_M = 7;
