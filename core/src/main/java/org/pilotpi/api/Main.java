@@ -1,5 +1,7 @@
 package org.pilotpi.api;
 
+import org.pilotpi.math.Vector;
+
 
 //Uncomment the below line to use this axis definition: 
 // X axis pointing forward
@@ -9,9 +11,10 @@ package org.pilotpi.api;
 //Positive roll : right wing down
 //Positive yaw : clockwise
 public class Main implements InertialMeasurementUnit {
-	int SENSOR_SIGN[] = new int[] {
-		1, 1, 1, -1, -1, -1, 1, 1, 1
-	};
+	public static final Vector GYRO_SENSOR_SIGN = 	new Vector(1, 1, 1);
+	public static final Vector ACCEL_SENSOR_SIGN = 	new Vector(-1, -1, -1);
+	public static final Vector MAG_SENSOR_SIGN = 	new Vector(1, 1, 1);
+	
 	// LSM303 accelerometer: 8 g sensitivity
 	// 3.9 mg/digit; 1 g = 256
 	public static final int GRAVITY = 256;
@@ -19,6 +22,8 @@ public class Main implements InertialMeasurementUnit {
 	public static final float Gyro_Gain_X = 0.07f; //X axis Gyro gain
 	public static final float Gyro_Gain_Y = 0.07f; //Y axis Gyro gain
 	public static final float Gyro_Gain_Z = 0.07f; //Z axis Gyro gain
+	
+	public static final Vector Gyro_Gain = new Vector(0.07f);
 	
 	// LSM303 magnetometer calibration constants; use the Calibrate example from
 	// the Pololu LSM303 library to find the right values for your board
@@ -52,86 +57,69 @@ public class Main implements InertialMeasurementUnit {
 	long timer = 0; // general purpuse timer
 	long timer_old;
 	long timer24 = 0; // Second timer used to print values
-	int[] AN = new int[9]; // array that stores the gyro and accelerometer data
-	int[] AN_OFFSET = new int[] {
-		0, 0, 0, 0, 0, 0
-	}; // Array that stores the Offset of the sensors
+	
+	Vector gyroOffset = new Vector();
+	Vector accelOffset = new Vector();
+	
+	Vector gyroData = new Vector();
+	Vector accelData = new Vector();
+	Vector magData = new Vector();
 
-	int gyro_x;
-	int gyro_y;
-	int gyro_z;
-	int accel_x;
-	int accel_y;
-	int accel_z;
-	int magnetom_x;
-	int magnetom_y;
-	int magnetom_z;
-	float c_magnetom_x;
-	float c_magnetom_y;
-	float c_magnetom_z;
+	Vector cMagnetom = new Vector();
 	float MAG_Heading;
 
-	float[] Accel_Vector = {
-		0, 0, 0
-	}; // Store the acceleration in a vector
-	float[] Gyro_Vector = {
-		0, 0, 0
-	};// Store the gyros turn rate in a vector
-	float[] Omega_Vector = {
-		0, 0, 0
-	}; // Corrected Gyro_Vector data
-	float[] Omega_P = {
-		0, 0, 0
-	};// Omega Proportional correction
-	float[] Omega_I = {
-		0, 0, 0
-	};// Omega Integrator
-	float[] Omega = {
-		0, 0, 0
-	};
+//	float[] Accel_Vector = {
+//		0, 0, 0
+//	}; // Store the acceleration in a vector
+//	float[] Gyro_Vector = {
+//		0, 0, 0
+//	};// Store the gyros turn rate in a vector
+//	float[] Omega_Vector = {
+//		0, 0, 0
+//	}; // Corrected Gyro_Vector data
+//	float[] Omega_P = {
+//		0, 0, 0
+//	};// Omega Proportional correction
+//	float[] Omega_I = {
+//		0, 0, 0
+//	};// Omega Integrator
+//	float[] Omega = {
+//		0, 0, 0
+//	};
+
+	Vector Accel_Vector = new Vector( 0, 0, 0);// Store the acceleration in a vector
+	Vector Gyro_Vector = new Vector( 0, 0, 0);// Store the gyros turn rate in a vector
+	Vector Omega_Vector = new Vector( 0, 0, 0);// Corrected Gyro_Vector data
+	Vector Omega_P = new Vector( 0, 0, 0);// Omega Proportional correctio
+	Vector Omega_I = new Vector( 0, 0, 0);// Omega Integrator
+	Vector Omega = new Vector( 0, 0, 0);
 
 	// Euler angles
 	float roll;
 	float pitch;
 	float yaw;
 
-	float[] errorRollPitch = new float[] {
-		0, 0, 0
-	};
-	float[] errorYaw = new float[] {
-		0, 0, 0
-	};
+	Vector errorRollPitch = new Vector( 0, 0, 0);
+	Vector errorYaw = new Vector( 0, 0, 0);
 
 	int counter = 0;
 	byte gyro_sat = 0;
 
-	float[][] DCM_Matrix = {
-		{
-			1, 0, 0
-		}, {
-			0, 1, 0
-		}, {
-			0, 0, 1
-		}
+	Vector[] DCM_Matrix = {
+		new Vector(1, 0, 0),
+		new Vector(0, 1, 0),
+		new Vector(0, 0, 1)
 	};
-	float[][] Update_Matrix = {
-		{
-			0, 1, 2
-		}, {
-			3, 4, 5
-		}, {
-			6, 7, 8
-		}
+	Vector[] Update_Matrix = {
+		new Vector(0, 1, 2),
+		new Vector(3, 4, 5),
+		new Vector(6, 7, 8)
 	}; // Gyros here
 
-	float[][] Temporary_Matrix = {
-		{
-			0, 0, 0
-		}, {
-			0, 0, 0
-		}, {
-			0, 0, 0
-		}
+	Vector[] Temporary_Matrix = {
+		new Vector(0, 0, 0),
+		new Vector(0, 0, 0),
+		new Vector(0, 0, 0)
 	};
 
 	Gyroscope gyroscope;
@@ -140,26 +128,28 @@ public class Main implements InertialMeasurementUnit {
 
 	public void init() {
 		gyroscope.init();
-		magnetometer.init();
-		accelerometer.init();
+		magnetometer.initMag();
+		accelerometer.initAcc();
 		initOffsets();
 	}
 
 	public void initOffsets() {
+		Vector gyroData = new Vector();
+		Vector accelData = new Vector();
 		for (int i = 0; i < 32; i++) {
-			gyroscope.readXYZ(AN);
-			accelerometer.readXYZ(AN, 3);
-			for (int j = 0; j < 6; j++) {
-				AN_OFFSET[j] += AN[j];
-			}
 			gyroscope.update();
-			accelerometer.update();
-			delay();
+			accelerometer.updateAcc();
+			
+			gyroscope.readGyro(gyroData);
+			accelerometer.readAcc(accelData);
+			
+			gyroOffset.add(gyroData);
+			accelOffset.add(accelData);
+			delay();			
 		}
-		for (int i = 0; i < 6; i++) {
-			AN_OFFSET[i] /= 32;
-		}
-		AN_OFFSET[5] -= GRAVITY * SENSOR_SIGN[5];
+		gyroOffset.devide(32);
+		accelOffset.devide(32);
+		accelOffset.substract(new Vector(0, 0, GRAVITY * ACCEL_SENSOR_SIGN.getZ()));
 	}
 
 	private double toRad(double x) {
@@ -216,7 +206,6 @@ public class Main implements InertialMeasurementUnit {
 	}
 
 	public void loop(){
-		
 		long timer = System.currentTimeMillis();
 		for(int i = 1;;i++){
 			if((System.currentTimeMillis() - timer) >= 20)  // Main loop runs at 50Hz
@@ -229,15 +218,17 @@ public class Main implements InertialMeasurementUnit {
 			      G_Dt = 0;
 			}
 			gyroscope.update();
-			accelerometer.update();
+			accelerometer.updateAcc();
 			
-			gyroscope.readXYZ(AN);
-			accelerometer.readXYZ(AN, 3);
-			magnetometer.readXYZ(AN, 6);
+			
+			gyroscope.readGyro(gyroData);
+			accelerometer.readAcc(accelData);
 			if(i%5 == 0){
-				magnetom_x = SENSOR_SIGN[6] * AN[6];
-				magnetom_y = SENSOR_SIGN[7] * AN[7];
-				magnetom_z = SENSOR_SIGN[8] * AN[8];
+				magnetometer.updateMag();
+				magnetometer.readMag(magData);
+				
+				magData.multiply(MAG_SENSOR_SIGN);
+
 				Compass_Heading();
 			}
 			delay();
@@ -353,41 +344,20 @@ public class Main implements InertialMeasurementUnit {
 
 	void Matrix_update()
 	{
-	  Gyro_Vector[0]=(float) Gyro_Scaled(gyro_x, Gyro_Gain_X); //gyro x roll
-	  Gyro_Vector[1]=(float) Gyro_Scaled(gyro_y, Gyro_Gain_Y); //gyro y pitch
-	  Gyro_Vector[2]=(float) Gyro_Scaled(gyro_z, Gyro_Gain_Z); //gyro Z yaw
+	  Gyro_Vector.setX((float) Gyro_Scaled(gyroData.getX(), Gyro_Gain_X)); //gyro x roll
+	  Gyro_Vector.setY((float) Gyro_Scaled(gyroData.getY(), Gyro_Gain_Y)); //gyro y roll
+	  Gyro_Vector.setZ((float) Gyro_Scaled(gyroData.getZ(), Gyro_Gain_Z)); //gyro z roll
 	  
-	  Accel_Vector[0]=accel_x;
-	  Accel_Vector[1]=accel_y;
-	  Accel_Vector[2]=accel_z;
+	  Accel_Vector.set(accelData);
 	    
-	  Vector_Add(Omega, Gyro_Vector, Omega_I);  //adding proportional term
-	  Vector_Add(Omega_Vector, Omega, Omega_P); //adding Integrator term
-
-	  //Accel_adjust();    //Remove centrifugal acceleration.   We are not using this function in this version - we have no speed measurement
+	  Omega_Vector.clear();
+	  Omega_Vector.add(Gyro_Vector);//adding proportional term
+	  Omega_Vector.add(Omega_I);//adding Integrator term
+	  Omega_Vector.add(Omega_P);
 	  
-	 if(OUTPUTMODE==1){         
-	  Update_Matrix[0][0]=0;
-	  Update_Matrix[0][1]=-G_Dt*Omega_Vector[2];//-z
-	  Update_Matrix[0][2]=G_Dt*Omega_Vector[1];//y
-	  Update_Matrix[1][0]=G_Dt*Omega_Vector[2];//z
-	  Update_Matrix[1][1]=0;
-	  Update_Matrix[1][2]=-G_Dt*Omega_Vector[0];//-x
-	  Update_Matrix[2][0]=-G_Dt*Omega_Vector[1];//-y
-	  Update_Matrix[2][1]=G_Dt*Omega_Vector[0];//x
-	  Update_Matrix[2][2]=0;
-	 }
-	 else {
-	  Update_Matrix[0][0]=0;
-	  Update_Matrix[0][1]=-G_Dt*Gyro_Vector[2];//-z
-	  Update_Matrix[0][2]=G_Dt*Gyro_Vector[1];//y
-	  Update_Matrix[1][0]=G_Dt*Gyro_Vector[2];//z
-	  Update_Matrix[1][1]=0;
-	  Update_Matrix[1][2]=-G_Dt*Gyro_Vector[0];
-	  Update_Matrix[2][0]=-G_Dt*Gyro_Vector[1];
-	  Update_Matrix[2][1]=G_Dt*Gyro_Vector[0];
-	  Update_Matrix[2][2]=0;
-	 }
+	  Update_Matrix[0].set(0, -G_Dt * Omega_Vector.getZ(), G_Dt*Omega_Vector.getY());
+	  Update_Matrix[1].set(G_Dt*Omega_Vector.getZ(), 0, -G_Dt*Omega_Vector.getX());
+	  Update_Matrix[2].set(-G_Dt*Omega_Vector.getY(), G_Dt*Omega_Vector.getX(), 0);
 
 	  Matrix_Multiply(DCM_Matrix,Update_Matrix,Temporary_Matrix); //a*b=c
 
@@ -401,24 +371,20 @@ public class Main implements InertialMeasurementUnit {
 	}
 
 	void Euler_angles() {
-		pitch = (float) (-1 * Math.asin(DCM_Matrix[2][0]));
-		roll = (float) Math.atan2(DCM_Matrix[2][1], DCM_Matrix[2][2]);
-		yaw = (float) Math.atan2(DCM_Matrix[1][0], DCM_Matrix[0][0]);
+		pitch = (float) (-1 * Math.asin(DCM_Matrix[2].getX()));
+		roll = (float) Math.atan2(DCM_Matrix[2].getY(), DCM_Matrix[2].getZ());
+		yaw = (float) Math.atan2(DCM_Matrix[1].getX(), DCM_Matrix[0].getX());
 	}
 
-	float vectorDotProduct(float vector1[], float vector2[]) {
-		float op = 0;
-		for (int c = 0; c < 3; c++) {
-			op += vector1[c] * vector2[c];
-		}
-		return op;
+	float vectorDotProduct(Vector v1, Vector v2) {
+		return v1.getX()*v2.getX() + v1.getY()*v2.getY() + v1.getY()*v2.getY();
 	}
 	
 	// Computes the cross product of two vectors
-	void Vector_Cross_Product(float vectorOut[], float v1[], float v2[]) {
-		vectorOut[0] = (v1[1] * v2[2]) - (v1[2] * v2[1]);
-		vectorOut[1] = (v1[2] * v2[0]) - (v1[0] * v2[2]);
-		vectorOut[2] = (v1[0] * v2[1]) - (v1[1] * v2[0]);
+	void Vector_Cross_Product(Vector vectorOut, Vector v1, Vector v2) {
+		vectorOut.setX((v1.getY() * v2.getZ()) - (v1.getZ() * v2.getY()));
+		vectorOut.setY((v1.getZ() * v2.getX()) - (v1.getX() * v2.getZ()));
+		vectorOut.setZ((v1.getX() * v2.getY()) - (v1.getY() * v2.getZ()));
 	}
 
 	// Multiply the vector by a scalar.
@@ -429,6 +395,7 @@ public class Main implements InertialMeasurementUnit {
 	}
 
 	void Vector_Add(float vectorOut[], float vectorIn1[], float vectorIn2[]) {
+		vectorOut.add
 		for (int c = 0; c < 3; c++) {
 			vectorOut[c] = vectorIn1[c] + vectorIn2[c];
 		}
@@ -436,10 +403,8 @@ public class Main implements InertialMeasurementUnit {
 
 	// Multiply two 3x3 matrixs. This function developed by Jordi can be easily
 	// adapted to multiple n*n matrix's. (Pero me da flojera!).
-	void Matrix_Multiply(float a[][], float b[][], float mat[][]) {
-		float op[] = {
-			0, 0, 0
-		};
+	void Matrix_Multiply(Vector[] a, Vector[] b, Vector[] mat) {
+		Vector op = new Vector();
 		for (int x = 0; x < 3; x++) {
 			for (int y = 0; y < 3; y++) {
 				for (int w = 0; w < 3; w++) {
@@ -468,14 +433,15 @@ public class Main implements InertialMeasurementUnit {
 
 		// adjust for LSM303 compass axis offsets/sensitivity differences by
 		// scaling to +/-0.5 range
-		c_magnetom_x = (float) ((float) (magnetom_x - SENSOR_SIGN[6] * M_X_MIN) / (M_X_MAX - M_X_MIN) - SENSOR_SIGN[6] * 0.5);
-		c_magnetom_y = (float) ((float) (magnetom_y - SENSOR_SIGN[7] * M_Y_MIN) / (M_Y_MAX - M_Y_MIN) - SENSOR_SIGN[7] * 0.5);
-		c_magnetom_z = (float) ((float) (magnetom_z - SENSOR_SIGN[8] * M_Z_MIN) / (M_Z_MAX - M_Z_MIN) - SENSOR_SIGN[8] * 0.5);
+
+		cMagnetom.setX((magData.getX() - MAG_SENSOR_SIGN.getX() * M_X_MIN) / (M_X_MAX - M_X_MIN) - MAG_SENSOR_SIGN.getX() * 0.5f);
+		cMagnetom.setY((magData.getY() - MAG_SENSOR_SIGN.getY() * M_Y_MIN) / (M_Y_MAX - M_Y_MIN) - MAG_SENSOR_SIGN.getY() * 0.5f);
+		cMagnetom.setZ((magData.getZ() - MAG_SENSOR_SIGN.getZ() * M_Z_MIN) / (M_Z_MAX - M_Z_MIN) - MAG_SENSOR_SIGN.getZ() * 0.5f);
 
 		// Tilt compensated Magnetic filed X:
-		MAG_X = c_magnetom_x * cos_pitch + c_magnetom_y * sin_roll * sin_pitch + c_magnetom_z * cos_roll * sin_pitch;
+		MAG_X = cMagnetom.getX() * cos_pitch + cMagnetom.getY() * sin_roll * sin_pitch + cMagnetom.getZ()* cos_roll * sin_pitch;
 		// Tilt compensated Magnetic filed Y:
-		MAG_Y = c_magnetom_y * cos_roll - c_magnetom_z * sin_roll;
+		MAG_Y = cMagnetom.getY()* cos_roll - cMagnetom.getZ() * sin_roll;
 		// Magnetic Heading
 		MAG_Heading = (float) Math.atan2(-MAG_Y, MAG_X);
 	}

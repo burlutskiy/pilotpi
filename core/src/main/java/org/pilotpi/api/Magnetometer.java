@@ -1,11 +1,9 @@
 package org.pilotpi.api;
 
+import org.pilotpi.math.Vector;
+
 public interface Magnetometer {
-	void init();
-	void readXYZ(int[] xyz);
-	void readXYZ(int[] xyz, int offset);
-	int readX();
-	int readY();
-	int readZ();
-	void update();
+	void initMag();
+	void readMag(Vector v);
+	void updateMag();
 }
