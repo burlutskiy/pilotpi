@@ -43,7 +43,7 @@ public class LSM303Sensor {
 		  adjust these values in your own sketch.
 		  */
 		  m_min = new Vector(-32767, -32767, -32767);
-		  m_max = new Vector(-32767, -32767, -32767);
+		  m_max = new Vector(32767, 32767, 32767);
 
 		  deviceType = DeviceType.device_auto;
 
