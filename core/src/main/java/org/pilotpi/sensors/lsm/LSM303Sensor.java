@@ -2,26 +2,21 @@ package org.pilotpi.sensors.lsm;
 
 import java.io.IOException;
 
-import org.pilotpi.math.Vector;
+import javax.vecmath.Vector3f;
+
+import org.pilotpi.api.Accelerometer;
+import org.pilotpi.api.Magnetometer;
 
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
 
-public class LSM303Sensor {
+public class LSM303Sensor implements Accelerometer, Magnetometer {
 	I2CBus bus;
 	I2CDevice device;
-
-	static enum DeviceType {
-		device_DLH, device_DLM, device_DLHC, device_D, device_auto
-	}
-
-	static enum Sa0State {
-		sa0_low, sa0_high, sa0_auto
-	};
+	volatile boolean initialized = false;
 
 	int address;
-	DeviceType deviceType;
 	byte acc_address;
 	byte mag_address;
 
@@ -30,56 +25,33 @@ public class LSM303Sensor {
 	long io_timeout;
 	boolean did_timeout;
 
-	Vector a; // accelerometer readings
-	Vector m; // magnetometer readings
-	Vector m_max; // maximum magnetometer values, used for calibration
-	Vector m_min; // minimum magnetometer values, used for calibration
+	Vector3f a; // accelerometer readings
+	Vector3f m; // magnetometer readings
+	Vector3f m_max; // maximum magnetometer values, used for calibration
+	Vector3f m_min; // minimum magnetometer values, used for calibration
 
 	byte last_status; // status of last I2C transmission
+	
+	public LSM303Sensor() {
+		try {
+			/*
+			 * These values lead to an assumed magnetometer bias of 0. Use the
+			 * Calibrate example program to determine appropriate values for your
+			 * particular unit. The Heading example demonstrates how to adjust these
+			 * values in your own sketch.
+			 */
+			m_min = new Vector3f(-32767, -32767, -32767);
+			m_max = new Vector3f(32767, 32767, 32767);
 
-	public void init() throws IOException {
-		/*
-		 * These values lead to an assumed magnetometer bias of 0. Use the
-		 * Calibrate example program to determine appropriate values for your
-		 * particular unit. The Heading example demonstrates how to adjust these
-		 * values in your own sketch.
-		 */
-		m_min = new Vector(-32767, -32767, -32767);
-		m_max = new Vector(32767, 32767, 32767);
+			io_timeout = 0; // 0 = no timeout
+			did_timeout = false;
 
-		deviceType = DeviceType.device_auto;
-
-		io_timeout = 0; // 0 = no timeout
-		did_timeout = false;
-
-		bus = I2CFactory.getInstance(1);
-		device = bus.getDevice(Constants.D_SA0_HIGH_ADDRESS);
-
-		// Accelerometer
-		// 0x57 = 0b01010111
-		// AFS = 0 (+/- 2 g full scale)
-		//device.write(Constants.CTRL2, (byte) 0x00);
-		device.write(Constants.CTRL2, (byte) 0x18); // 8 g full scale: AFS = 011
-		
-
-		// 0x57 = 0b01010111
-		// AODR = 0101 (50 Hz ODR); AZEN = AYEN = AXEN = 1 (all axes enabled)
-		device.write(Constants.CTRL1, (byte) 0x57);
-
-		// Magnetometer
-
-		// 0x64 = 0b01100100
-		// M_RES = 11 (high resolution mode); M_ODR = 001 (6.25 Hz ODR)
-		device.write(Constants.CTRL5, (byte) 0x64);
-
-		// 0x20 = 0b00100000
-		// MFS = 01 (+/- 4 gauss full scale)
-		device.write(Constants.CTRL6, (byte) 0x20);
-
-		// 0x00 = 0b00000000
-		// MLP = 0 (low power mode off); MD = 00 (continuous-conversion mode)
-		device.write(Constants.CTRL7, (byte) 0x00);
-
+			bus = I2CFactory.getInstance(1);
+			device = bus.getDevice(Constants.D_SA0_HIGH_ADDRESS);
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// Reads the 3 accelerometer channels and stores them in vector a
@@ -120,8 +92,75 @@ public class LSM303Sensor {
 		m.setX(zhm << 8 | zlm);
 	}
 
-	public void update() {
+	@Override
+	public void initMag() {
+		try {
+			// Magnetometer
+	
+			// 0x64 = 0b01100100
+			// M_RES = 11 (high resolution mode); M_ODR = 001 (6.25 Hz ODR)
+			device.write(Constants.CTRL5, (byte) 0x64);
+	
+			// 0x20 = 0b00100000
+			// MFS = 01 (+/- 4 gauss full scale)
+			device.write(Constants.CTRL6, (byte) 0x20);
+	
+			// 0x00 = 0b00000000
+			// MLP = 0 (low power mode off); MD = 00 (continuous-conversion mode)
+			device.write(Constants.CTRL7, (byte) 0x00);
+		}
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
+	@Override
+	public void readMag(Vector3f v) {
+		v.set(m);
+	}
+
+	@Override
+	public void updateMag() {
+		try {
+			readMag();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void initAcc() {
+		try{
+			// Accelerometer
+			// 0x57 = 0b01010111
+			// AFS = 0 (+/- 2 g full scale)
+			//device.write(Constants.CTRL2, (byte) 0x00);
+			device.write(Constants.CTRL2, (byte) 0x18); // 8 g full scale: AFS = 011
+			
+
+			// 0x57 = 0b01010111
+			// AODR = 0101 (50 Hz ODR); AZEN = AYEN = AXEN = 1 (all axes enabled)
+			device.write(Constants.CTRL1, (byte) 0x57);			
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void readAcc(Vector3f v) {
+		v.set(a);
+	}
+
+	@Override
+	public void updateAcc() {
+		try {
+			readAcc();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

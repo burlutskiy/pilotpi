@@ -1,10 +1,10 @@
 package org.pilotpi.api;
 
-import org.pilotpi.math.Vector;
+import javax.vecmath.Vector3f;
 
 public interface Accelerometer {
 	
 	void initAcc();
-	void readAcc(Vector v);
+	void readAcc(Vector3f v);
 	void updateAcc();
 }
