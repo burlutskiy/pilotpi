@@ -1,0 +1,1 @@
+sudo java -classpath /home/pi/pilotpi/*:/opt/pi4j/lib/* org.pilotpi.sensors.l3g.L3GyroSensor
