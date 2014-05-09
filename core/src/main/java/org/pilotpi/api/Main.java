@@ -1,5 +1,6 @@
 package org.pilotpi.api;
 
+import org.pilotpi.math.Matrix;
 import org.pilotpi.math.Vector;
 
 
@@ -105,22 +106,18 @@ public class Main implements InertialMeasurementUnit {
 	int counter = 0;
 	byte gyro_sat = 0;
 
-	Vector[] DCM_Matrix = {
+	Matrix DCM_Matrix = new Matrix(
 		new Vector(1, 0, 0),
 		new Vector(0, 1, 0),
 		new Vector(0, 0, 1)
-	};
-	Vector[] Update_Matrix = {
+	);
+	Matrix Update_Matrix = new Matrix(
 		new Vector(0, 1, 2),
 		new Vector(3, 4, 5),
 		new Vector(6, 7, 8)
-	}; // Gyros here
+	); // Gyros here
 
-	Vector[] Temporary_Matrix = {
-		new Vector(0, 0, 0),
-		new Vector(0, 0, 0),
-		new Vector(0, 0, 0)
-	};
+	Matrix Temporary_Matrix = new Matrix();
 
 	Gyroscope gyroscope;
 	Magnetometer magnetometer;
@@ -245,27 +242,27 @@ public class Main implements InertialMeasurementUnit {
 	void Normalize()
 	{
 	  float error=0;
-	  float[][] temporary = {{0,0,0},{0,0,0},{0,0,0}}; 
+	  Vector[] temporary = {new Vector(), new Vector(), new Vector()}; 
 	  float renorm=0;
 	  
-	  error = vectorDotProduct(DCM_Matrix[0], DCM_Matrix[1]) * -.5f; //eq.19
+	  error = vectorDotProduct(DCM_Matrix.getRow(0), DCM_Matrix.getRow(1)) * -.5f; //eq.19
 
-	  Vector_Scale(temporary[0], DCM_Matrix[1], error); //eq.19
-	  Vector_Scale(temporary[1], DCM_Matrix[0],error); //eq.19
+	  Vector_Scale(temporary[0], DCM_Matrix.getRow(1), error); //eq.19
+	  Vector_Scale(temporary[1], DCM_Matrix.getRow(0),error); //eq.19
 	  
-	  Vector_Add(temporary[0], temporary[0], DCM_Matrix[0]);//eq.19
-	  Vector_Add(temporary[1], temporary[1], DCM_Matrix[1]);//eq.19
+	  Vector_Add(temporary[0], temporary[0], DCM_Matrix.getRow(0));//eq.19
+	  Vector_Add(temporary[1], temporary[1], DCM_Matrix.getRow(1));//eq.19
 	  
 	  Vector_Cross_Product(temporary[2], temporary[0], temporary[1]); // c= a x b //eq.20
 	  
 	  renorm= .5f *(3 - vectorDotProduct(temporary[0], temporary[0])); //eq.21
-	  Vector_Scale(DCM_Matrix[0], temporary[0], renorm);
+	  Vector_Scale(DCM_Matrix.getRow(0), temporary[0], renorm);
 	  
 	  renorm= .5f *(3 - vectorDotProduct(temporary[1], temporary[1])); //eq.21
-	  Vector_Scale(DCM_Matrix[1], temporary[1], renorm);
+	  Vector_Scale(DCM_Matrix.getRow(1), temporary[1], renorm);
 	  	  
 	  renorm= .5f *(3 - vectorDotProduct(temporary[2], temporary[2])); //eq.21
-	  Vector_Scale(DCM_Matrix[2], temporary[2], renorm);
+	  Vector_Scale(DCM_Matrix.getRow(2), temporary[2], renorm);
 
 	}
 
@@ -355,9 +352,9 @@ public class Main implements InertialMeasurementUnit {
 	  Omega_Vector.add(Omega_I);//adding Integrator term
 	  Omega_Vector.add(Omega_P);
 	  
-	  Update_Matrix[0].set(0, -G_Dt * Omega_Vector.getZ(), G_Dt*Omega_Vector.getY());
-	  Update_Matrix[1].set(G_Dt*Omega_Vector.getZ(), 0, -G_Dt*Omega_Vector.getX());
-	  Update_Matrix[2].set(-G_Dt*Omega_Vector.getY(), G_Dt*Omega_Vector.getX(), 0);
+	  Update_Matrix.getRow(0).set(0, -G_Dt * Omega_Vector.getZ(), G_Dt*Omega_Vector.getY());
+	  Update_Matrix.getRow(1).set(G_Dt*Omega_Vector.getZ(), 0, -G_Dt*Omega_Vector.getX());
+	  Update_Matrix.getRow(2).set(-G_Dt*Omega_Vector.getY(), G_Dt*Omega_Vector.getX(), 0);
 
 	  Matrix_Multiply(DCM_Matrix,Update_Matrix,Temporary_Matrix); //a*b=c
 
@@ -405,15 +402,15 @@ public class Main implements InertialMeasurementUnit {
 	// adapted to multiple n*n matrix's. (Pero me da flojera!).
 	void Matrix_Multiply(Vector[] a, Vector[] b, Vector[] mat) {
 		Vector op = new Vector();
-		for (int x = 0; x < 3; x++) {
-			for (int y = 0; y < 3; y++) {
-				for (int w = 0; w < 3; w++) {
-					op[w] = a[x][w] * b[w][y];
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				for (int k = 0; k < 3; k++) {
+					op[k] = a[i][k] * b[k][j];
 				}
-				mat[x][y] = 0;
-				mat[x][y] = op[0] + op[1] + op[2];
+				mat[i][j] = 0;
+				mat[i][j] = op[0] + op[1] + op[2];
 
-				float test = mat[x][y];
+				float test = mat[i][j];
 			}
 		}
 	}
@@ -449,5 +446,5 @@ public class Main implements InertialMeasurementUnit {
 	double Gyro_Scaled(float x, float gyro_gain){ 
 		return (x)*toRad(gyro_gain); //Return the scaled ADC raw data of the gyro in radians for second
 	}
-	
 }
+	

@@ -2,93 +2,96 @@ package org.pilotpi.math;
 
 public class Vector
 {
-    private float x;
-    private float y;
-    private float z;
+    private float[] vector = {0,0,0};
 
     public Vector(){
-        x = y = z = 0f;
     }
 
     public Vector(float a, float b, float c){
-        x = a;
-        y = b;
-        z = c;
+    	vector[0] = a;
+    	vector[1] = b;
+    	vector[2] = c;
     }
 
     public Vector(float f){
-        x = y = z = f;
+    	vector[0] = vector[1] = vector[2] = f;
     }
 
 	public float getX() {
-		return x;
+		return vector[0];
 	}
 
 	public void setX(float x) {
-		this.x = x;
+		vector[0] = x;
 	}
 
 	public float getY() {
-		return y;
+		return vector[1];
 	}
 
 	public void setY(float y) {
-		this.y = y;
+		vector[1] = y;
 	}
 
 	public float getZ() {
-		return z;
+		return vector[2];
 	}
 
 	public void setZ(float z) {
-		this.z = z;
+		vector[2] = z;
 	}
     
 	public void addX(float x){
-		this.x+=x;
+		vector[0]+=x;
 	}
 	public void addY(float y){
-		this.y+=y;
+		vector[1]+=y;
 	}
 	public void addZ(float z){
-		this.z+=z;
+		vector[2]+=z;
 	}
-	public void add(Vector v){
-		this.x+=v.x;
-		this.y+=v.y;
-		this.z+=v.z;
+	public float[] intern(){
+		return vector;
+	}
+	public void add(Vector v)
+	{
+		for (int i = 0; i < v.intern().length; i++) {
+			vector[i]+=v.intern()[i];
+		}
 	}
     public void devide(float f){
-    	this.x /= f;
-    	this.y /= f;
-    	this.z /= f;
+    	vector[0] /= f;
+    	vector[1] /= f;
+    	vector[2] /= f;
     }
 
 	public void substract(Vector v) {
-		this.x-=v.x;
-		this.y-=v.y;
-		this.z-=v.z;
+		for (int i = 0; i < v.intern().length; i++) {
+			vector[i]-=v.intern()[i];
+		}
 	}
 
 	public void multiply(Vector v) {
-    	this.x *= v.x;
-    	this.y *= v.y;
-    	this.z *= v.z;
+		for (int i = 0; i < v.intern().length; i++) {
+			vector[i]*=v.intern()[i];
+		}
 	}
 
 	public void set(Vector v) {
-		this.x = v.x;
-		this.y = v.y;
-		this.z = v.z;
+		for (int i = 0; i < v.intern().length; i++) {
+			vector[i] = v.intern()[i];
+		}
 	}
 
 	public void clear() {
-		x = y = z = 0f;		
+		for (int i = 0; i < 3; i++) {
+			vector[i] = 0;
+		}
 	}
 
 	public void set(float x, float y, float z) {
-		this.x = x;
-		this.y = y;
-		this.z = z;		
+		vector[0] = x;
+		vector[1] = y;
+		vector[2] = z;		
 	}
 }
