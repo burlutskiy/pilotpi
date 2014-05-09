@@ -56,7 +56,7 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 
 	// Reads the 3 accelerometer channels and stores them in vector a
 	void readAcc() throws IOException {
-		for (; (device.read(Constants.STATUS_A) & 0b00001000) >> 3 != 1; Thread.yield());
+		for (; (device.read(Constants.STATUS_A) & 0x8) >> 3 != 1; Thread.yield());
 		int xla = device.read(Constants.OUT_X_L_A);
 		int xha = device.read(Constants.OUT_X_H_A);
 		int yla = device.read(Constants.OUT_Y_L_A);
@@ -77,7 +77,7 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 	void readMag() throws IOException {
 		int xlm, xhm, ylm, yhm, zlm, zhm;
 
-		for (; (device.read(Constants.STATUS_M) & 0b00001000) >> 3 != 1; Thread.yield());
+		for (; (device.read(Constants.STATUS_M) & 0x8) >> 3 != 1; Thread.yield());
 		// / D: X_L, X_H, Y_L, Y_H, Z_L, Z_H
 		xlm = device.read(Constants.D_OUT_X_L_M);
 		xhm = device.read(Constants.D_OUT_X_H_M);

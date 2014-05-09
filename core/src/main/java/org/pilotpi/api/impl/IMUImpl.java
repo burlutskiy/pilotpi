@@ -110,18 +110,14 @@ public class IMUImpl implements IMU {
 	Accelerometer accelerometer;
 
 	IMUListener listener;
+	private boolean isRunning;
 	
-	public IMUImpl() {
-		LSM303Sensor lsm303Sensor = new LSM303Sensor();
-		gyroscope = new L3GyroSensor();
-		magnetometer = lsm303Sensor;
-		accelerometer = lsm303Sensor;
-	}
 	public void init() {
 		gyroscope.initGyro();
 		magnetometer.initMag();
 		accelerometer.initAcc();
 		initOffsets();
+		isRunning = true;
 	}
 
 	public void initOffsets() {
@@ -198,7 +194,7 @@ public class IMUImpl implements IMU {
 
 	public void start() {
 		long timer = System.currentTimeMillis();
-		for (int i = 1;; i++) {
+		for (int i = 1; isRunning ; i++) {
 			if ((System.currentTimeMillis() - timer) >= 20) // Main loop runs at
 															// 50Hz
 			{
@@ -234,10 +230,18 @@ public class IMUImpl implements IMU {
 			Drift_correction();
 			Euler_angles();
 			// ***
-			listener.update(roll, pitch, yaw);
+			if(listener != null){
+				listener.update(roll, pitch, yaw);
+			}
 		}
 	}
 
+	public void stop() {
+		isRunning = false;
+	}
+	
+	private 
+	
 	void Normalize() {
 		float error = 0;
 
@@ -410,4 +414,5 @@ public class IMUImpl implements IMU {
 	public void registerListener(IMUListener listener) {
 		this.listener = listener;
 	}
+	
 }

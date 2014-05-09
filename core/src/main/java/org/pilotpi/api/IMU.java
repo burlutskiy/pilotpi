@@ -9,6 +9,7 @@ public interface IMU {
 	
 	void init();
 	void start();
+	void stop();
 	Gyroscope getGyroscope();
 	Accelerometer getAccelerometer();
 	Magnetometer getMagnetometer();

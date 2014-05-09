@@ -2,6 +2,8 @@ package org.pilotpi.api.impl;
 
 import org.pilotpi.api.IMU;
 import org.pilotpi.api.IMUListener;
+import org.pilotpi.sensors.l3g.L3GyroSensor;
+import org.pilotpi.sensors.lsm.LSM303Sensor;
 
 public class IMUController {
 	IMU imu;
@@ -10,6 +12,11 @@ public class IMUController {
 	
 	public IMUController() {
 		imu = new IMUImpl();
+		LSM303Sensor lsm303Sensor = new LSM303Sensor();
+		((IMUImpl)imu).setAccelerometer(lsm303Sensor);
+		((IMUImpl)imu).setMagnetometer(lsm303Sensor);
+		((IMUImpl)imu).setGyroscope(new L3GyroSensor());
+		
 		imuListener = new IMUListener() {
 			@Override
 			public void update(float roll, float pitch, float yaw) {
