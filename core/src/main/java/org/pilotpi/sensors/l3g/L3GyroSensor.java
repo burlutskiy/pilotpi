@@ -28,7 +28,7 @@ public class L3GyroSensor implements Gyroscope {
 	}
 
 	@Override
-	public void init() {
+	public void initGyro() {
 		try {
 			device.write(Constants.L3G_CTRL_REG1, (byte) 0x0F); // normal power
 			device.write(Constants.L3G_CTRL_REG4, (byte) 0x20); // 2000 dps full scale

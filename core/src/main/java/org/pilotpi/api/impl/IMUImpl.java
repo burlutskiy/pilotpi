@@ -1,7 +1,15 @@
-package org.pilotpi.api;
+package org.pilotpi.api.impl;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
+
+import org.pilotpi.api.Accelerometer;
+import org.pilotpi.api.Gyroscope;
+import org.pilotpi.api.IMU;
+import org.pilotpi.api.IMUListener;
+import org.pilotpi.api.Magnetometer;
+import org.pilotpi.sensors.l3g.L3GyroSensor;
+import org.pilotpi.sensors.lsm.LSM303Sensor;
 
 //Uncomment the below line to use this axis definition: 
 // X axis pointing forward
@@ -10,7 +18,7 @@ import javax.vecmath.Vector3f;
 //Positive pitch : nose up
 //Positive roll : right wing down
 //Positive yaw : clockwise
-public class Main implements InertialMeasurementUnit {
+public class IMUImpl implements IMU {
 	public static final Vector3f GYRO_SENSOR_SIGN = new Vector3f(1, 1, 1);
 	public static final Vector3f ACCEL_SENSOR_SIGN = new Vector3f(-1, -1, -1);
 	public static final Vector3f MAG_SENSOR_SIGN = new Vector3f(1, 1, 1);
@@ -91,13 +99,26 @@ public class Main implements InertialMeasurementUnit {
 																		// here
 
 	Matrix3f temporaryMatrix = new Matrix3f();
+	Vector3f row1 = new Vector3f();
+	Vector3f row2 = new Vector3f();
+	Vector3f tmpVectorX = new Vector3f();
+	Vector3f tmpVectorY = new Vector3f();
+	Vector3f tmpVectorZ = new Vector3f();
 
 	Gyroscope gyroscope;
 	Magnetometer magnetometer;
 	Accelerometer accelerometer;
 
+	IMUListener listener;
+	
+	public IMUImpl() {
+		LSM303Sensor lsm303Sensor = new LSM303Sensor();
+		gyroscope = new L3GyroSensor();
+		magnetometer = lsm303Sensor;
+		accelerometer = lsm303Sensor;
+	}
 	public void init() {
-		gyroscope.init();
+		gyroscope.initGyro();
 		magnetometer.initMag();
 		accelerometer.initAcc();
 		initOffsets();
@@ -175,7 +196,7 @@ public class Main implements InertialMeasurementUnit {
 		}
 	}
 
-	public void loop() {
+	public void start() {
 		long timer = System.currentTimeMillis();
 		for (int i = 1;; i++) {
 			if ((System.currentTimeMillis() - timer) >= 20) // Main loop runs at
@@ -213,33 +234,28 @@ public class Main implements InertialMeasurementUnit {
 			Drift_correction();
 			Euler_angles();
 			// ***
+			listener.update(roll, pitch, yaw);
 		}
 	}
 
 	void Normalize() {
 		float error = 0;
 
-		Vector3f row1 = new Vector3f();
-		Vector3f row2 = new Vector3f();
-		Vector3f tmpVector1 = new Vector3f();
-		Vector3f tmpVector2 = new Vector3f();
-		Vector3f tmpVector3 = new Vector3f();
-
 		dcmMatrix.getRow(0, row1);
 		dcmMatrix.getRow(1, row2);
 		error = row1.dot(row2) * -.5f; // eq.19
 
-		tmpVector1.set(row2);
-		tmpVector1.scaleAdd(error, tmpVector1);
+		tmpVectorX.set(row2);
+		tmpVectorX.scaleAdd(error, tmpVectorX);
 
-		tmpVector2.set(row1);
-		tmpVector2.scaleAdd(error, tmpVector2);
+		tmpVectorY.set(row1);
+		tmpVectorY.scaleAdd(error, tmpVectorY);
 
-		tmpVector3.cross(tmpVector1, tmpVector2);
+		tmpVectorZ.cross(tmpVectorX, tmpVectorY);
 
-		renormDMCMatrix(tmpVector1, 0);
-		renormDMCMatrix(tmpVector2, 1);
-		renormDMCMatrix(tmpVector3, 2);
+		renormDMCMatrix(tmpVectorX, 0);
+		renormDMCMatrix(tmpVectorY, 1);
+		renormDMCMatrix(tmpVectorZ, 2);
 
 	}
 
@@ -258,7 +274,6 @@ public class Main implements InertialMeasurementUnit {
 		Vector3f scaledOmegaI = new Vector3f();
 		float accelMagnitude;
 		float accelWeight;
-		Vector3f tmpVectorZ = new Vector3f();
 
 		// *****Roll and Pitch***************
 
@@ -390,5 +405,9 @@ public class Main implements InertialMeasurementUnit {
 	double Gyro_Scaled(float x, float gyro_gain) {
 		return (x) * toRad(gyro_gain); // Return the scaled ADC raw data of the
 										// gyro in radians for second
+	}
+	@Override
+	public void registerListener(IMUListener listener) {
+		this.listener = listener;
 	}
 }

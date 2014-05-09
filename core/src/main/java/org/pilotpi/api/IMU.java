@@ -1,9 +1,14 @@
 package org.pilotpi.api;
 
-public interface InertialMeasurementUnit {
+/**
+ * 
+ * @author burlutal
+ *
+ */
+public interface IMU {
 	
 	void init();
-	
+	void start();
 	Gyroscope getGyroscope();
 	Accelerometer getAccelerometer();
 	Magnetometer getMagnetometer();
@@ -12,4 +17,5 @@ public interface InertialMeasurementUnit {
 	float getRoll();
 	float getYaw();
 	
+	void registerListener(IMUListener listener);
 }
