@@ -19,11 +19,15 @@ public class IMUController {
 		
 		imuListener = new IMUListener() {
 			@Override
-			public void update(float roll, float pitch, float yaw) {
-				System.out.println(String.format("roll: %.2f, pitch: %.2f, yaw: %.2f", roll, pitch, yaw));
+			public void update(double roll, double pitch, double yaw) {
+				System.out.println(String.format("roll:\t%.2f\tpitch:\t%.2f\tyaw:\t%.2f", toDeg(roll), toDeg(pitch), toDeg(yaw)));
 			}
 		};
 	}
+	private double toDeg(double x) {
+		return x * 57.2957795131d; // *180/pi
+	}
+	
 	public void init(){
 		imu.init();
 		imu.registerListener(imuListener);
@@ -40,5 +44,11 @@ public class IMUController {
 
 	public void stopIMU(){
 		imuThread.interrupt();
+	}
+	
+	public static void main(String[] args) {
+		IMUController controller = new IMUController();
+		controller.init();
+		controller.startIMU();
 	}
 }

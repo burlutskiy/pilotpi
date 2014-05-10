@@ -1,9 +1,9 @@
 package org.pilotpi.api;
 
-import javax.vecmath.Vector3f;
+import javax.vecmath.Vector3d;
 
 public interface Gyroscope {
 	void initGyro();
-	void readGyro(Vector3f v);
+	void readGyro(Vector3d v);
 	void update();
 }

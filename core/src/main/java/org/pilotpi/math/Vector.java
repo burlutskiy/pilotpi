@@ -2,55 +2,55 @@ package org.pilotpi.math;
 
 public class Vector
 {
-    private float[] vector = {0,0,0};
+    private double[] vector = {0,0,0};
 
     public Vector(){
     }
 
-    public Vector(float a, float b, float c){
+    public Vector(double a, double b, double c){
     	vector[0] = a;
     	vector[1] = b;
     	vector[2] = c;
     }
 
-    public Vector(float f){
+    public Vector(double f){
     	vector[0] = vector[1] = vector[2] = f;
     }
 
-	public float getX() {
+	public double getX() {
 		return vector[0];
 	}
 
-	public void setX(float x) {
+	public void setX(double x) {
 		vector[0] = x;
 	}
 
-	public float getY() {
+	public double getY() {
 		return vector[1];
 	}
 
-	public void setY(float y) {
+	public void setY(double y) {
 		vector[1] = y;
 	}
 
-	public float getZ() {
+	public double getZ() {
 		return vector[2];
 	}
 
-	public void setZ(float z) {
+	public void setZ(double z) {
 		vector[2] = z;
 	}
     
-	public void addX(float x){
+	public void addX(double x){
 		vector[0]+=x;
 	}
-	public void addY(float y){
+	public void addY(double y){
 		vector[1]+=y;
 	}
-	public void addZ(float z){
+	public void addZ(double z){
 		vector[2]+=z;
 	}
-	public float[] intern(){
+	public double[] intern(){
 		return vector;
 	}
 	public void add(Vector v)
@@ -59,7 +59,7 @@ public class Vector
 			vector[i]+=v.intern()[i];
 		}
 	}
-    public void devide(float f){
+    public void devide(double f){
     	vector[0] /= f;
     	vector[1] /= f;
     	vector[2] /= f;
@@ -89,7 +89,7 @@ public class Vector
 		}
 	}
 
-	public void set(float x, float y, float z) {
+	public void set(double x, double y, double z) {
 		vector[0] = x;
 		vector[1] = y;
 		vector[2] = z;		

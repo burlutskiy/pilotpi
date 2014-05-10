@@ -1,0 +1,1 @@
+sudo java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044 -classpath /home/pi/pilotpi/*:/opt/pi4j/lib/* org.pilotpi.api.impl.IMUController

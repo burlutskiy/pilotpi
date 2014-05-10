@@ -2,7 +2,7 @@ package org.pilotpi.math;
 
 public class Matrix {
 
-	private float[][] matrix = {
+	private double[][] matrix = {
 			{0,0,0},
 			{0,0,0},
 			{0,0,0}

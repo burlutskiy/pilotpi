@@ -2,7 +2,7 @@ package org.pilotpi.sensors.lsm;
 
 import java.io.IOException;
 
-import javax.vecmath.Vector3f;
+import javax.vecmath.Vector3d;
 
 import org.pilotpi.api.Accelerometer;
 import org.pilotpi.api.Magnetometer;
@@ -25,10 +25,9 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 	long io_timeout;
 	boolean did_timeout;
 
-	Vector3f a; // accelerometer readings
-	Vector3f m; // magnetometer readings
-	Vector3f m_max; // maximum magnetometer values, used for calibration
-	Vector3f m_min; // minimum magnetometer values, used for calibration
+	short ax, ay, az, mx, my, mz;
+	short m_max_x, m_max_y, m_max_z; // maximum magnetometer values, used for calibration
+	short m_min_x, m_min_y, m_min_z; // minimum magnetometer values, used for calibration
 
 	byte last_status; // status of last I2C transmission
 	
@@ -40,8 +39,11 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 			 * particular unit. The Heading example demonstrates how to adjust these
 			 * values in your own sketch.
 			 */
-			m_min = new Vector3f(-32767, -32767, -32767);
-			m_max = new Vector3f(32767, 32767, 32767);
+			/*
+			 * magne:	x(-3431	6081)	y(-3331	5503)	z(-1460	7515)
+			 */
+			m_max_x = m_max_y = m_max_z = -32767;
+			m_min_x = m_min_y = m_min_z = 32767;
 
 			io_timeout = 0; // 0 = no timeout
 			did_timeout = false;
@@ -57,39 +59,52 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 	// Reads the 3 accelerometer channels and stores them in vector a
 	void readAcc() throws IOException {
 		for (; (device.read(Constants.STATUS_A) & 0x8) >> 3 != 1; Thread.yield());
-		int xla = device.read(Constants.OUT_X_L_A);
-		int xha = device.read(Constants.OUT_X_H_A);
-		int yla = device.read(Constants.OUT_Y_L_A);
-		int yha = device.read(Constants.OUT_Y_H_A);
-		int zla = device.read(Constants.OUT_Z_L_A);
-		int zha = device.read(Constants.OUT_Z_H_A);
+		byte xla = (byte) device.read(Constants.OUT_X_L_A);
+		byte xha = (byte) device.read(Constants.OUT_X_H_A);
+		byte yla = (byte) device.read(Constants.OUT_Y_L_A);
+		byte yha = (byte) device.read(Constants.OUT_Y_H_A);
+		byte zla = (byte) device.read(Constants.OUT_Z_L_A);
+		byte zha = (byte) device.read(Constants.OUT_Z_H_A);
 
 		// combine high and low bytes
 		// This no longer drops the lowest 4 bits of the readings from the
 		// DLH/DLM/DLHC, which are always 0
 		// (12-bit resolution, left-aligned). The D has 16-bit resolution
-		a.setX(xha << 8 | xla);
-		a.setY(yha << 8 | yla);
-		a.setZ(zha << 8 | zla);
+		ax = (short) ((xha & 0xff) << 8 | (xla & 0xff));
+		ay = (short) ((yha & 0xff) << 8 | (yla & 0xff));
+		az = (short) ((zha & 0xff) << 8 | (zla & 0xff));
+		ax >>= 4;
+		ay >>= 4;
+		az >>= 4;
 	}
 
 	// Reads the 3 accelerometer channels and stores them in vector a
 	void readMag() throws IOException {
-		int xlm, xhm, ylm, yhm, zlm, zhm;
+		byte xlm, xhm, ylm, yhm, zlm, zhm;
 
 		for (; (device.read(Constants.STATUS_M) & 0x8) >> 3 != 1; Thread.yield());
 		// / D: X_L, X_H, Y_L, Y_H, Z_L, Z_H
-		xlm = device.read(Constants.D_OUT_X_L_M);
-		xhm = device.read(Constants.D_OUT_X_H_M);
-		ylm = device.read(Constants.D_OUT_Y_L_M);
-		yhm = device.read(Constants.D_OUT_Y_H_M);
-		zlm = device.read(Constants.D_OUT_Z_L_M);
-		zhm = device.read(Constants.D_OUT_Z_H_M);
+		xlm = (byte) device.read(Constants.D_OUT_X_L_M);
+		xhm = (byte) device.read(Constants.D_OUT_X_H_M);
+		ylm = (byte) device.read(Constants.D_OUT_Y_L_M);
+		yhm = (byte) device.read(Constants.D_OUT_Y_H_M);
+		zlm = (byte) device.read(Constants.D_OUT_Z_L_M);
+		zhm = (byte) device.read(Constants.D_OUT_Z_H_M);
 
 		// combine high and low bytes
-		m.setX(xhm << 8 | xlm);
-		m.setX(yhm << 8 | ylm);
-		m.setX(zhm << 8 | zlm);
+		mx = (short) ((xhm & 0xff) << 8 | (xlm& 0xff));
+		my = (short) ((yhm & 0xff) << 8 | (ylm& 0xff));
+		mz = (short) ((zhm & 0xff) << 8 | (zlm& 0xff));
+		mx >>= 4;
+		my >>= 4;
+		mz >>= 4;
+		
+		m_min_x = (short) Math.min(m_min_x, mx);
+		m_min_y = (short) Math.min(m_min_y, my);
+		m_min_z = (short) Math.min(m_min_z, mz);
+		m_max_x = (short) Math.max(m_max_x, mx);
+		m_max_y = (short) Math.max(m_max_y, my);
+		m_max_z = (short) Math.max(m_max_z, mz);
 	}
 
 	@Override
@@ -116,8 +131,8 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 	}
 
 	@Override
-	public void readMag(Vector3f v) {
-		v.set(m);
+	public void readMag(Vector3d v) {
+		v.set(mx,my,mz);
 	}
 
 	@Override
@@ -149,8 +164,8 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 	}
 
 	@Override
-	public void readAcc(Vector3f v) {
-		v.set(a);
+	public void readAcc(Vector3d v) {
+		v.set(ax, ay, az);
 	}
 
 	@Override
@@ -163,4 +178,38 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 		}
 	}
 
+	public static void main(String[] args) throws InterruptedException {
+		LSM303Sensor lsm303Sensor = new LSM303Sensor();
+		lsm303Sensor.initAcc();
+		lsm303Sensor.initMag();
+		short[] accel = {0,0,0};
+		short[] mag = {0,0,0};
+		
+		for(;;){
+			lsm303Sensor.updateAcc();
+			lsm303Sensor.updateMag();
+
+			lsm303Sensor.readAcc(accel);
+			lsm303Sensor.readMag(mag);
+			
+			System.out.println(String.format("accel:\t%d\t%d\t%d\tmagne:\t%d(%d\t%d)\t%d(%d\t%d)\t%d(%d\t%d)", accel[0], accel[1], accel[2], mag[0], 
+					lsm303Sensor.m_min_x, lsm303Sensor.m_max_x, mag[1], lsm303Sensor.m_min_y, lsm303Sensor.m_max_y, mag[2], lsm303Sensor.m_min_z, lsm303Sensor.m_max_z));
+			
+			Thread.sleep(250);
+		}
+	}
+
+	@Override
+	public void readAcc(short[] v) {
+		v[0] = ax;
+		v[1] = ay;
+		v[2] = az;
+	}
+
+	@Override
+	public void readMag(short[] v) {
+		v[0] = mx;
+		v[1] = my;
+		v[2] = mz;
+	}
 }

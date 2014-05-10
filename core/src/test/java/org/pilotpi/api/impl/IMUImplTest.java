@@ -2,7 +2,7 @@ package org.pilotpi.api.impl;
 
 import java.util.concurrent.Executors;
 
-import javax.vecmath.Vector3f;
+import javax.vecmath.Vector3d;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,28 +34,28 @@ public class IMUImplTest {
 	public void test() throws InterruptedException{
 		Answer<Object> gyroAnswer = new Answer<Object>() {
 			public Object answer(InvocationOnMock invocation) throws Throwable {
-				Vector3f gyro = (Vector3f) invocation.getArguments()[0];
+				Vector3d gyro = (Vector3d) invocation.getArguments()[0];
 				gyro.set(1,1,1);
 				return null;
 			}
 		};
 		Answer<Object> magAnswer = new Answer<Object>() {
 			public Object answer(InvocationOnMock invocation) throws Throwable {
-				Vector3f mag = (Vector3f) invocation.getArguments()[0];
+				Vector3d mag = (Vector3d) invocation.getArguments()[0];
 				mag.set(1,1,1);
 				return null;
 			}
 		};
 		Answer<Object> accAnswer = new Answer<Object>() {
 			public Object answer(InvocationOnMock invocation) throws Throwable {
-				Vector3f acc = (Vector3f) invocation.getArguments()[0];
+				Vector3d acc = (Vector3d) invocation.getArguments()[0];
 				acc.set(1,1,1);
 				return null;
 			}
 		};
-		Mockito.doAnswer(gyroAnswer).when(gyroscope).readGyro((Vector3f) Mockito.any());
-		Mockito.doAnswer(magAnswer).when(magnetometer).readMag((Vector3f) Mockito.any());
-		Mockito.doAnswer(accAnswer).when(accelerometer).readAcc((Vector3f) Mockito.any());
+		Mockito.doAnswer(gyroAnswer).when(gyroscope).readGyro((Vector3d) Mockito.any());
+		Mockito.doAnswer(magAnswer).when(magnetometer).readMag((Vector3d) Mockito.any());
+		Mockito.doAnswer(accAnswer).when(accelerometer).readAcc((Vector3d) Mockito.any());
 		
 		Executors.newSingleThreadExecutor().execute(new Runnable() {
 			@Override

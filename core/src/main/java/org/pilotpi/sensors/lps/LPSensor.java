@@ -43,12 +43,12 @@ public class LPSensor
     public double getAltitude()
     {
         double altimeter_setting_mbar = 1013.25D;
-        return (1.0D - Math.pow((double)pressure / 4096D / altimeter_setting_mbar, 0.19026299999999999D)) * 44330.800000000003D;
+        return (1.0D - Math.pow(pressure / 4096D / altimeter_setting_mbar, 0.19026299999999999D)) * 44330.800000000003D;
     }
 
     public double getTemperture()
     {
-        return (42.5D + (double)temperture / 480D) - 139D;
+        return (42.5D + temperture / 480D) - 139D;
     }
 
     public static void main(String args[])
@@ -62,7 +62,7 @@ public class LPSensor
         {
             sensor.update();
             System.out.println(String.format("mbars: %.2f \t altitude: %.1f \t temperture: %.1f", new Object[] {
-                Double.valueOf((double)sensor.pressure / 4096D), Double.valueOf(sensor.getAltitude() - zero_altitude), Double.valueOf(sensor.getTemperture())
+                Double.valueOf(sensor.pressure / 4096D), Double.valueOf(sensor.getAltitude() - zero_altitude), Double.valueOf(sensor.getTemperture())
             }));
             Thread.sleep(500L);
         } while(true);

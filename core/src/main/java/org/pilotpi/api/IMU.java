@@ -14,9 +14,9 @@ public interface IMU {
 	Accelerometer getAccelerometer();
 	Magnetometer getMagnetometer();
 	
-	float getPitch();
-	float getRoll();
-	float getYaw();
+	double getPitch();
+	double getRoll();
+	double getYaw();
 	
 	void registerListener(IMUListener listener);
 }
