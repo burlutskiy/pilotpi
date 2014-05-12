@@ -18,26 +18,31 @@ public class LPSensor
     {
     }
 
-    public void init()
-        throws IOException
-    {
-        bus = I2CFactory.getInstance(1);
-        device = bus.getDevice(93);
-        device.write(32, (byte)-32);
-        device.write(16, (byte)122);
+    public void init() {
+    	try {
+	        bus = I2CFactory.getInstance(1);
+	        device = bus.getDevice(93);
+			device.write(32, (byte)-32);
+			device.write(16, (byte)122);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 
-    public void update()
-        throws IOException
-    {
-        for(; (device.read(39) & 2) >> 1 != 1; Thread.yield()){};
-        int pxl = device.read(40);
-        int pl = device.read(41);
-        int ph = device.read(42);
-        pressure = ph << 16 | pl << 8 | pxl;
-        int tl = device.read(43);
-        int th = device.read(44);
-        temperture = th << 8 | tl;
+    public void update(){
+    	try {
+	        for(; (device.read(39) & 2) >> 1 != 1; Thread.yield()){};
+	        int pxl = device.read(40);
+	        int pl = device.read(41);
+	        int ph = device.read(42);
+	        pressure = ph << 16 | pl << 8 | pxl;
+	        int tl = device.read(43);
+	        int th;
+			th = device.read(44);
+			temperture = th << 8 | tl;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
 
     public double getAltitude()

@@ -13,7 +13,7 @@ import com.pi4j.io.i2c.I2CFactory;
 public class L3GyroSensor implements Gyroscope {
 	I2CBus bus;
 	I2CDevice device;
-	short x, y, z;
+	private short x, y, z;
 	
 	public L3GyroSensor() {
 		try {
@@ -91,5 +91,26 @@ public class L3GyroSensor implements Gyroscope {
 			Thread.sleep(250);
 		}
 	}
+
+	@Override
+	public void readGyro(short[] v) {
+		v[0] = x;
+		v[1] = y;
+		v[2] = z;
+	}
+
+	public short getX() {
+		return x;
+	}
+
+	public short getY() {
+		return y;
+	}
+
+	public short getZ() {
+		return z;
+	}
+	
+	
 }
 
