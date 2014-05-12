@@ -99,14 +99,22 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 		my >>= 4;
 		mz >>= 4;
 		
-		m_min_x = (short) Math.min(m_min_x, mx);
-		m_min_y = (short) Math.min(m_min_y, my);
-		m_min_z = (short) Math.min(m_min_z, mz);
-		m_max_x = (short) Math.max(m_max_x, mx);
-		m_max_y = (short) Math.max(m_max_y, my);
-		m_max_z = (short) Math.max(m_max_z, mz);
+		m_min_x = min(m_min_x, mx);
+		m_min_y = min(m_min_y, my);
+		m_min_z = min(m_min_z, mz);
+		m_max_x = max(m_max_x, mx);
+		m_max_y = max(m_max_y, my);
+		m_max_z = max(m_max_z, mz);
 	}
 
+	private short min(short a, short b){
+		return a < b? a : b;
+	}
+	
+	private short max(short a, short b){
+		return a > b? a : b;
+	}
+	
 	@Override
 	public void initMag() {
 		try {
