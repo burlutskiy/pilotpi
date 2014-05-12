@@ -192,8 +192,8 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 			lsm303Sensor.readAcc(accel);
 			lsm303Sensor.readMag(mag);
 			
-			System.out.println(String.format("accel:\t%d\t%d\t%d\tmagne:\t%d(%d\t%d)\t%d(%d\t%d)\t%d(%d\t%d)", accel[0], accel[1], accel[2], mag[0], 
-					lsm303Sensor.m_min_x, lsm303Sensor.m_max_x, mag[1], lsm303Sensor.m_min_y, lsm303Sensor.m_max_y, mag[2], lsm303Sensor.m_min_z, lsm303Sensor.m_max_z));
+			System.out.println(String.format("accel:\t%d\t%d\t%d\tmagne:\t%d(%d\t%d)\t%d(%d\t%d)\t%d(%d\t%d\theading:\t%.2f)", accel[0], accel[1], accel[2], mag[0], 
+					lsm303Sensor.m_min_x, lsm303Sensor.m_max_x, mag[1], lsm303Sensor.m_min_y, lsm303Sensor.m_max_y, mag[2], lsm303Sensor.m_min_z, lsm303Sensor.m_max_z, lsm303Sensor.heading()));
 			
 			Thread.sleep(250);
 		}
@@ -212,4 +212,27 @@ public class LSM303Sensor implements Accelerometer, Magnetometer {
 		v[1] = my;
 		v[2] = mz;
 	}
+	double heading(){
+	    // subtract offset (average of min and max) from magnetometer readings
+		Vector3d temp_m = new Vector3d(mx,my,mz);
+	    temp_m.x -= (m_min_x + m_max_x) / 2;
+	    temp_m.y -= (m_min_y + m_max_y) / 2;
+	    temp_m.z -= (m_min_z + m_max_z) / 2;
+
+	    // compute E and N
+	    Vector3d e = new Vector3d();
+	    Vector3d n = new Vector3d();
+	    Vector3d a = new Vector3d(az, ay, az);
+		Vector3d from = new Vector3d(1, 0, 0);
+	    e.cross(temp_m, a);
+	    e.normalize();
+	    n.cross(a, e);
+	    n.normalize();
+
+	    // compute heading
+	    double heading = Math.atan2( e.dot(from), n.dot(from)) * 180 / Math.PI;
+	    if (heading < 0) heading += 360;
+	    return heading;
+	}
+
 }

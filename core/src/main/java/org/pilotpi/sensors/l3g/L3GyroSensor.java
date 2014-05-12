@@ -53,7 +53,7 @@ public class L3GyroSensor implements Gyroscope {
 //			boolean yAvailable = 	(status & 0b0000_0010 >> 7) == 1;
 //			boolean xAvailable = 	(status & 0b0000_0001 >> 7) == 1;
 
-//			for(; (device.read(Constants.L3G_STATUS_REG) & 0x8) >> 3 != 1; Thread.yield()){};
+			for(; (device.read(Constants.L3G_STATUS_REG) & 0x8) >> 3 != 1; Thread.yield()){};
 			 
 			byte xlg = (byte) device.read(Constants.L3G_OUT_X_L);
 			byte xhg = (byte) device.read(Constants.L3G_OUT_X_H);

@@ -36,12 +36,12 @@ public class IMUImpl implements IMU {
 
 	// LSM303 magnetometer calibration constants; use the Calibrate example from
 	// the Pololu LSM303 library to find the right values for your board
-	public static final int M_X_MIN = -658;
-	public static final int M_Y_MIN = -639;
-	public static final int M_Z_MIN = -697;
-	public static final int M_X_MAX = 863;
-	public static final int M_Y_MAX = 884;
-	public static final int M_Z_MAX = 854;
+	public static final int M_X_MIN = -152;
+	public static final int M_Y_MIN = -252;
+	public static final int M_Z_MIN = -204;
+	public static final int M_X_MAX = 287;
+	public static final int M_Y_MAX = 255;
+	public static final int M_Z_MAX = 474;
 
 	public static final double Kp_ROLLPITCH = 0.02f;
 	public static final double Ki_ROLLPITCH = 0.00002f;
@@ -191,15 +191,15 @@ public class IMUImpl implements IMU {
 	public void start() {
 		long timer = System.currentTimeMillis();
 		for (int i = 0;isRunning;i++) {
-			if ((System.currentTimeMillis() - timer) >= 1) // Main loop runs at 50Hz
-			{
+//			if ((System.currentTimeMillis() - timer) >= 20) // Main loop runs at 50Hz
+//			{
 				timer_old = timer;
 				timer = System.currentTimeMillis();
 				if (timer > timer_old)
 					G_Dt = (timer - timer_old) / 1000.0f; // Real time of loop run. We use this on the DCM algorithm (gyro integration time)
 				else
 					G_Dt = 0;
-			}
+//			}
 			readGyro();
 			readAccel();
 			if (i >= 5) {

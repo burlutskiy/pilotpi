@@ -20,7 +20,7 @@ public class IMUController {
 		imuListener = new IMUListener() {
 			@Override
 			public void update(double roll, double pitch, double yaw) {
-				System.out.println(String.format("roll:\t%.2f\tpitch:\t%.2f\tyaw:\t%.2f", toDeg(roll), toDeg(pitch), toDeg(yaw)));
+				System.out.println(String.format("roll:\t%.0f\tpitch:\t%.0f\tyaw:\t%.0f", toDeg(roll), toDeg(pitch), toDeg(yaw)));
 			}
 		};
 	}
